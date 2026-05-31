@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+.svelte-kit
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+data/
+.DS_Store
