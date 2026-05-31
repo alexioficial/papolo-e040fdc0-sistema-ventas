@@ -1,3 +1,4 @@
+import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config import settings
 
@@ -14,14 +15,18 @@ async def get_db():
 async def connect_db():
     """Conecta a MongoDB de forma asíncrona."""
     global client
-    client = AsyncIOMotorClient(settings.mongodb_uri)
-    # Verify connection
     try:
+        client = AsyncIOMotorClient(
+            settings.mongodb_uri,
+            serverSelectionTimeoutMS=10000,  # 10s timeout
+        )
+        # Ping para verificar conexión
         await client.admin.command("ping")
         print(f"✅ Conectado a MongoDB: {settings.mongodb_uri}")
     except Exception as e:
-        print(f"❌ Error conectando a MongoDB: {e}")
-        raise
+        print(f"⚠️  Advertencia: No se pudo conectar a MongoDB: {e}")
+        print(f"   La app seguirá funcionando, pero las operaciones de BD fallarán")
+        print(f"   hasta que la conexión esté disponible.")
 
 
 async def close_db():
