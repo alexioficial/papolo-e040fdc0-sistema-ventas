@@ -4,6 +4,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse
+from starlette.staticfiles import StaticFiles as StarletteStaticFiles
 
 from app.config import settings
 from app.database import connect_db, close_db
@@ -51,8 +53,49 @@ async def health():
     return {"status": "ok", "app": settings.app_name, "mongo": mongo_status}
 
 
-# Servir frontend estático (si existe)
+# Servir frontend estático
 static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
-    print(f"📁 Sirviendo frontend estático desde {static_dir}")
+    from starlette.routing import Mount
+    from starlette.responses import Response
+
+    # Servir assets estáticos de _app
+    app.mount("/_app", StaticFiles(directory=str(static_dir / "_app")), name="assets")
+
+    # Servir favicon
+    favicon_path = static_dir / "favicon.png"
+    if favicon_path.exists():
+        @app.get("/favicon.png")
+        async def favicon():
+            return FileResponse(favicon_path)
+
+    # Servir archivos HTML pre-renderizados y fallback SPA para todo lo demás
+    @app.api_route("/{path:path}", methods=["GET"])
+    async def spa(request, path: str):
+        # No interferir con rutas de API (ya manejadas arriba)
+        if path.startswith("api/"):
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "Not Found"}, status_code=404)
+
+        # Intentar servir archivo estático exacto
+        file_path = static_dir / path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+
+        # Intentar servir archivo HTML por nombre (para rutas pre-renderizadas)
+        html_path = static_dir / f"{path}.html"
+        if html_path.exists():
+            return FileResponse(html_path)
+
+        # Intentar index.html dentro de directorio
+        dir_index = static_dir / path / "index.html"
+        if dir_index.exists():
+            return FileResponse(dir_index)
+
+        # Fallback SPA: servir index.html para que SvelteKit maneje el routing
+        index_html = static_dir / "index.html"
+        if index_html.exists():
+            return FileResponse(index_html)
+
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"detail": "Not Found"}, status_code=404)

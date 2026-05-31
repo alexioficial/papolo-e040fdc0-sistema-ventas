@@ -1,34 +1,20 @@
 <script lang="ts">
   import '../app.css';
-  import { page } from '$app/stores';
+  let { children } = $props();
 </script>
 
 <div class="layout">
   <aside class="sidebar">
     <h1>📊 Ventas</h1>
     <nav>
-      <a href="/" class:active={$page.url.pathname === '/'}>
-        🏠 Dashboard
-      </a>
-      <a href="/productos" class:active={$page.url.pathname.startsWith('/productos')}>
-        📦 Productos
-      </a>
-      <a href="/clientes" class:active={$page.url.pathname.startsWith('/clientes')}>
-        👥 Clientes
-      </a>
-      <a href="/ventas" class:active={$page.url.pathname.startsWith('/ventas')}>
-        🧾 Ventas
-      </a>
-      <a href="/carrito" class:active={$page.url.pathname.startsWith('/carrito')}>
-        🛒 Carrito
-      </a>
+      <a href="/">🏠 Dashboard</a>
+      <a href="/productos">📦 Productos</a>
+      <a href="/clientes">👥 Clientes</a>
+      <a href="/ventas">🧾 Ventas</a>
+      <a href="/carrito">🛒 Carrito</a>
     </nav>
   </aside>
-  <main class="main-content">
+  <main class="main-content" id="main-content">
     {@render children()}
   </main>
 </div>
-
-<script lang="ts" context="module">
-  export const ssr = false;
-</script>
